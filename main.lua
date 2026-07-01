@@ -1,4 +1,11 @@
-function love.load()
+--[[ Block Drop Game
+- green blocks drop at random speeds and random x values, starting above screen 
+- special gold upgrade blocks appear at random intervals
+- when upgrade clicked, slows all green blocks down for 2 seconds
+- score increases for each block clicked
+- when green blocks clicked, they respawn above screen at random x value
+- if a green block falls off screen, game over
+]] function love.load()
     math.randomseed(os.time())
 
     brickGuy = love.graphics.newImage("extra_character_a.png")
@@ -22,9 +29,11 @@ function love.load()
     score = 0
     gameOver = false
 
+    -- variables related to upgrade being on, so that upgrade effect can end after 2 seconds
     upgradeOn = false
     upgradeTimer = 0
 
+    -- variables related to if special block is on screen, allows for random spawning of new special blocks
     specialOn = false
     specialTimer = 0
     specialDelay = love.math.random(4, 8)
@@ -34,14 +43,15 @@ function love.load()
 
 end
 
-function spawnSpecial(dt)
+-- helper function to spawn new special blocks at random locations
+function spawnSpecial()
     specialOn = true
 
     specialStartX = love.math.random(love.graphics.getWidth() - specialBrick:getWidth())
     specialStartY = math.random(love.graphics.getHeight() - specialBrick:getHeight())
 end
 
-function love.mousepressed(x, y, button, istouch) -- istouch is a boolean
+function love.mousepressed(x, y, button, istouch)
     if button == 1 then
         for i, value in ipairs(startX) do
             if x >= startX[i] and x <= startX[i] + brickGuy:getWidth() and y >= startY[i] and y <= startY[i] +
@@ -54,9 +64,11 @@ function love.mousepressed(x, y, button, istouch) -- istouch is a boolean
                 break
             end
         end
+
         if specialOn and x >= specialStartX and x <= specialStartX + specialBrick:getWidth() and y >= specialStartY and
             y <= specialStartY + specialBrick:getHeight() then
 
+            -- turns upgrade on when pressed, sets special on screen to false, resets timers and chooses a new random delay amount  
             upgradeOn = true
             specialOn = false
             SpecialTimer = 0
@@ -66,13 +78,11 @@ function love.mousepressed(x, y, button, istouch) -- istouch is a boolean
     end
 end
 
-function love.update(dt) -- delta time as parameter
-    -- upgradeTimer = upgradeTimer + dt
-    -- specialTimer = specialTimer + dt
+function love.update(dt)
 
-    fallRateUpgrade = 20
+    fallRateUpgrade = 20 -- hard coded slow fall rate as upgrade
 
-    -- handles the fall rate when active
+    -- handles the fall rate when upgrade active
     if upgradeOn then
         for i, value in ipairs(startX) do
             startY[i] = startY[i] + fallRateUpgrade * dt;
@@ -89,19 +99,22 @@ function love.update(dt) -- delta time as parameter
         end
     end
 
-    -- handles ending the upgrade, resets timers
+    -- handles the upgrade timer, turns upgrade off after 2 seconds
     if upgradeOn then
         upgradeTimer = upgradeTimer + dt
 
-        if upgradeTimer >= 2 then -- ends the upgrade after 2 seconds
+        if upgradeTimer >= 2 then
             upgradeTimer = 0
             upgradeOn = false
         end
     end
 
+    -- when special block isn't on screen, start counter to respawn another one
     if not specialOn then
         specialTimer = specialTimer + dt
 
+        -- when timer meets random delay amount, spawn new special block,
+        -- reset timer and choose another random delay amount
         if specialTimer >= specialDelay then
             spawnSpecial()
             specialTimer = 0
@@ -109,10 +122,12 @@ function love.update(dt) -- delta time as parameter
         end
     end
 end
+
 function love.draw()
 
     love.graphics.setFont(love.graphics.newFont(24))
 
+    -- gameover screen
     if gameOver then
         love.graphics.print('GAME OVER', 500, 500)
         love.graphics.print('SCORE: ' .. score, 500, 530)
@@ -120,7 +135,7 @@ function love.draw()
         return
     end
 
-    love.graphics.print('SCORE: ' .. score, love.graphics.getWidth() - 150, love.graphics.getHeight() - 50) -- check to see if font could be prettier
+    love.graphics.print('SCORE: ' .. score, love.graphics.getWidth() - 150, love.graphics.getHeight() - 50)
 
     for i, value in ipairs(startX) do
         love.graphics.draw(brickGuy, startX[i], startY[i]);
